@@ -12,6 +12,6 @@ LogiCRUD is a Django-based application designed to manage and process sensor dat
 ## Technologies Used
 
 - **Backend**: Django REST Framework
-- **Database**: SQLite (or any other database of your choice)
-- **MATLAB**: For processing sensor data
+- **Database**: PosgreSQL 17
+- **MATLAB R2024b**: For processing sensor data
 - **Environment**: Python 3.x
