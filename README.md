@@ -1,7 +1,7 @@
 # LogiCRUD
 
 LogiCRUD is a Django-based application designed to manage and process sensor data. It provides a RESTful API for interacting with various devices, allowing users to retrieve real-time readings and process them through MATLAB for further analysis.
-
+![Current Functionality](logicrud.gif)
 ## Features
 
 - **Sensor Data Management**: Store and manage readings from various sensors.
