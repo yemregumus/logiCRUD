@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Button, Form, ListGroup, Alert, Spinner, Modal } from "react-bootstrap";
+import LineChartComponent from "./components/LineChartComponent";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 
 function App() {
@@ -16,16 +18,21 @@ function App() {
   const [matlabResult, setMatlabResult] = useState(null); // For MATLAB results
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReadings, setSelectedReadings] = useState([]);
+  const [filteredSelectedReadings, setFilteredSelectedReadings] = useState([]);
 
   const filteredReadings = readings.filter((reading) => reading.device_name.toLowerCase().includes(searchTerm.toLowerCase()));
+
   useEffect(() => {
     fetchReadings();
-    console.log(readings); // Check that readings get updated here
   }, []);
+  useEffect(() => {
+    const updatedFilteredReadings = readings.filter((reading) => selectedReadings.includes(reading.id));
+    setFilteredSelectedReadings(updatedFilteredReadings);
+    console.log(updatedFilteredReadings);
+  }, [selectedReadings, readings]);
 
   const fetchReadings = async () => {
     setLoading(true);
-    console.log(readings);
     try {
       const response = await axios.get("http://localhost:8000/api/device_readings/");
       setReadings(response.data);
@@ -47,14 +54,28 @@ function App() {
       });
 
       setMatlabResult(response.data.result); // Store MATLAB result
-      console.log(response.data.result);
       setSuccessMessage("Data processed successfully with MATLAB!");
-      setSelectedReadings([]);
     } catch (error) {
-      setErrorMessage("There was an error processing the data with MATLAB!");
+      setErrorMessage("Select readings to process with MATLAB!");
     } finally {
       setLoading(false);
     }
+  };
+  const clearSelection = async () => {
+    setSelectedReadings([]);
+  };
+
+  const handleSort = (criteria) => {
+    const sortedReadings = [...readings].sort((a, b) => {
+      if (criteria === "device_name") {
+        return a.device_name.localeCompare(b.device_name);
+      } else if (criteria === "reading_value") {
+        return parseFloat(a.reading_value) - parseFloat(b.reading_value);
+      } else if (criteria === "reading_time") {
+        return new Date(a.reading_time) - new Date(b.reading_time);
+      }
+    });
+    setReadings(sortedReadings);
   };
 
   const handleCreate = async (e) => {
@@ -129,7 +150,17 @@ function App() {
       <div className="mb-3">
         <input type="text" className="form-control" placeholder="Search for a device..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
-
+      <div className="d-flex justify-content-between align-items-center">
+        <Button className="mt-3" onClick={() => handleSort("device_name")}>
+          Sort by Device Name
+        </Button>
+        <Button className="mt-3" onClick={() => handleSort("reading_value")}>
+          Sort by Value
+        </Button>
+        <Button className="mt-3" onClick={() => handleSort("reading_time")}>
+          Sort by Date
+        </Button>
+      </div>
       <div style={{ maxHeight: "300px", overflowY: "auto" }}>
         <ListGroup className="mt-4">
           {filteredReadings.map((reading) => (
@@ -177,16 +208,19 @@ function App() {
             <Form.Label>Reading Value</Form.Label>
             <Form.Control type="text" placeholder="Enter reading value" value={readingValue} onChange={(e) => setReadingValue(e.target.value)} required />
           </Form.Group>
-
-          <Button className="mt-3" variant="primary" type="submit">
-            {currentReading ? "Update Reading" : "Add Reading"}
-          </Button>
+          <div className="d-flex justify-content-between align-items-center">
+            <Button className="mt-3" variant="primary" type="submit">
+              {currentReading ? "Update Reading" : "Add Reading"}
+            </Button>
+            <Button className="mt-3" variant="primary" onClick={handleProcessWithMatlab}>
+              Process Data with MATLAB
+            </Button>
+            <Button className="mt-3" variant="primary" onClick={clearSelection}>
+              Clear Selection
+            </Button>
+          </div>
         </Form>
-
-        <Button className="mt-3" variant="primary" onClick={handleProcessWithMatlab}>
-          Process Data with MATLAB
-        </Button>
-
+        <LineChartComponent readings={filteredSelectedReadings} />
         {matlabResult && (
           <div className="mt-4">
             <h3>MATLAB Processed Data:</h3>
@@ -242,7 +276,6 @@ function App() {
             </table>
           </div>
         )}
-
         {/* Delete Confirmation Modal */}
         <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
           <Modal.Header closeButton>
