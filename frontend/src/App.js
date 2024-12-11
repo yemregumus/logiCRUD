@@ -15,7 +15,7 @@ function App() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [readingToDelete, setReadingToDelete] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [matlabResult, setMatlabResult] = useState(null); // For MATLAB results
+  const [dataResult, setResult] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedReadings, setSelectedReadings] = useState([]);
   const [filteredSelectedReadings, setFilteredSelectedReadings] = useState([]);
@@ -43,20 +43,20 @@ function App() {
     }
   };
 
-  const handleProcessWithMatlab = async () => {
+  const handleProcess = async () => {
     setLoading(true);
     const readingsToProcess = readings.filter((reading) => selectedReadings.includes(reading.id)); // Get selected readings
     try {
-      const response = await axios.post("http://localhost:8000/api/process_matlab/", readingsToProcess, {
+      const response = await axios.post("http://localhost:8000/api/process_data/", readingsToProcess, {
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      setMatlabResult(response.data.result); // Store MATLAB result
-      setSuccessMessage("Data processed successfully with MATLAB!");
+      setResult(response.data.result);
+      setSuccessMessage("Data processed successfully!");
     } catch (error) {
-      setErrorMessage("Select readings to process with MATLAB!");
+      setErrorMessage("Select readings to process!");
     } finally {
       setLoading(false);
     }
@@ -212,8 +212,8 @@ function App() {
             <Button className="mt-3" variant="primary" type="submit">
               {currentReading ? "Update Reading" : "Add Reading"}
             </Button>
-            <Button className="mt-3" variant="primary" onClick={handleProcessWithMatlab}>
-              Process Data with MATLAB
+            <Button className="mt-3" variant="primary" onClick={handleProcess}>
+              Process Data
             </Button>
             <Button className="mt-3" variant="primary" onClick={clearSelection}>
               Clear Selection
@@ -221,9 +221,9 @@ function App() {
           </div>
         </Form>
         <LineChartComponent readings={filteredSelectedReadings} />
-        {matlabResult && (
+        {dataResult && (
           <div className="mt-4">
-            <h3>MATLAB Processed Data:</h3>
+            <h3>Processed Data:</h3>
 
             {/* Mean Values Table */}
             <h4>Mean Values</h4>
@@ -235,8 +235,8 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(matlabResult.mean_values).length > 0 ? (
-                  Object.entries(matlabResult.mean_values).map(([sensor, value], index) => (
+                {Object.entries(dataResult.mean_values).length > 0 ? (
+                  Object.entries(dataResult.mean_values).map(([sensor, value], index) => (
                     <tr key={index}>
                       <td>{sensor}</td>
                       <td>{value}</td>
@@ -260,8 +260,8 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(matlabResult.median_values).length > 0 ? (
-                  Object.entries(matlabResult.median_values).map(([sensor, value], index) => (
+                {Object.entries(dataResult.median_values).length > 0 ? (
+                  Object.entries(dataResult.median_values).map(([sensor, value], index) => (
                     <tr key={index}>
                       <td>{sensor}</td>
                       <td>{value}</td>

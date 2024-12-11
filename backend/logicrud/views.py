@@ -6,7 +6,7 @@ from rest_framework import status
 import logging
 import json
 
-from logicrud.matlab_integration import process_sensor_data
+from .process import process_sensor_data
 from .models import DeviceReading
 from .serializers import DeviceReadingSerializer
 
@@ -20,18 +20,34 @@ def test_cors_view(request):
 
 
 # ViewSet for DeviceReadings
+# The `DeviceReadingViewSet` is a viewset class that inherits from `viewsets.ModelViewSet`
+# provided by Django REST framework. It is used to handle CRUD operations (Create, Retrieve,
+# Update, Delete) for the `DeviceReading` model.
 class DeviceReadingViewSet(viewsets.ModelViewSet):
     queryset = DeviceReading.objects.all()
     serializer_class = DeviceReadingSerializer
 
 
 # List and create DeviceReadings
+# `DeviceReadingListCreate` is a class that extends `generics.ListCreateAPIView` provided by
+# Django REST framework. It is used to handle both listing and creating operations for the
+# `DeviceReading` model. The `queryset` attribute is set to fetch all instances of
+# `DeviceReading` model, and the `serializer_class` attribute is set to use the
+# `DeviceReadingSerializer` for serialization and deserialization of data when listing or
+# creating `DeviceReading` instances. This class simplifies the implementation of API endpoints
+# for listing and creating `DeviceReading` instances.
 class DeviceReadingListCreate(generics.ListCreateAPIView):
     queryset = DeviceReading.objects.all()
     serializer_class = DeviceReadingSerializer
 
 
 # Sensor Data View
+# The `SensorDataView` class is a view class that inherits from `APIView` provided by Django
+# REST framework. It is used to handle GET and POST requests for sensor data. The `get` method
+# fetches all instances of `DeviceReading` model and serializes them using the
+# `DeviceReadingSerializer`. The `post` method processes the incoming sensor data using the
+# `process_sensor_data` function and returns the result. If an error occurs during processing,
+# an error response is returned with the appropriate status code.
 class SensorDataView(APIView):
     def get(self, request):
         try:
@@ -51,8 +67,8 @@ class SensorDataView(APIView):
             )
 
         try:
-            matlab_result = process_sensor_data(sensor_data_json=sensor_data)
-            return Response({"result": matlab_result}, status=status.HTTP_200_OK)
+            result = process_sensor_data(sensor_data_json=sensor_data)
+            return Response({"result": result}, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error processing sensor data: {str(e)}")
             return Response(
@@ -60,7 +76,13 @@ class SensorDataView(APIView):
             )
 
 
-class ProcessMatlabView(APIView):
+# Process View
+# The `ProcessView` class is a view class that inherits from `APIView` provided by Django REST
+# framework. It is used to handle POST requests for processing sensor data. The `post` method
+# processes the incoming sensor data using the `process_sensor_data` function and returns the
+# result. If an error occurs during processing, an error response is returned with the
+# appropriate status code.
+class ProcessView(APIView):
     def post(self, request):
         try:
             # Log the incoming data for debugging
@@ -76,11 +98,11 @@ class ProcessMatlabView(APIView):
                 logger.info(f"JSON data to be processed: {sensor_data_json}")
 
                 # Call the process_sensor_data function with the JSON string
-                matlab_result = process_sensor_data(sensor_data_json=sensor_data_json)
+                result = process_sensor_data(sensor_data_json=sensor_data_json)
 
                 return Response(
                     {
-                        "result": matlab_result,
+                        "result": result,
                         "message": "Data processed successfully!",
                     },
                     status=status.HTTP_200_OK,
